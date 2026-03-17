@@ -39,14 +39,14 @@
           "value": "1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA",
           "mode": "list",
           "cachedResultName": "LEAD SCRAPPING CONTROL",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit?usp=drivesdk"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAFMn7GFcDbxvbzFjVD9duN_liwA/edit?usp=drivesdk"
         },
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
           "cachedResultName": "Hoja 1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit#gid=0"
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQ2sMn7GFcDbxvbzFjVD9duN_liwA/edit#gid=0"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -630,7 +630,7 @@
           "parameters": [
             {
               "name": "X-Goog-Api-Key",
-              "value": "AIzaSyBB2AF9QVyy8fjIHma9414Jg6VG6RXXK0o"
+              "value": "A"
             },
             {
               "name": "X-Goog-FieldMask",
