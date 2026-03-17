@@ -1,0 +1,1226 @@
+{
+  "name": "v3 Agente Email Scrapper (Ollama Ready)",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json.cleanUrl }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1616,
+        320
+      ],
+      "id": "6f62197b-8546-48a1-add1-dedafd844f45",
+      "name": "Scrape Company URLs1",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA",
+          "mode": "list",
+          "cachedResultName": "LEAD SCRAPPING CONTROL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Web": "={{ $('Mapeo correo - web1').item.json.web }}",
+            "Correo Icebreaker": "={{ JSON.parse($json.message.content).ASUNTO }}",
+            "Estado": "Enviado"
+          },
+          "matchingColumns": [
+            "Web"
+          ],
+          "schema": [
+            {
+              "id": "Web",
+              "displayName": "Web",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Correo",
+              "displayName": "Correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Correo Icebreaker",
+              "displayName": "Correo Icebreaker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -256,
+        496
+      ],
+      "id": "f179cc38-7aab-4bac-8143-b960d26c9e91",
+      "name": "Google Sheets1",
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ovIzcN1TGUNM8rdA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fb6979ad-b631-408e-b42b-8f2401b39c1c",
+              "name": "correo",
+              "value": "={{ $('Loop Over Items1').item.json.Correo }}",
+              "type": "string"
+            },
+            {
+              "id": "999b858f-f84e-401a-8f8d-e8a7d2a9be23",
+              "name": "web",
+              "value": "={{ $('Loop Over Items1').item.json.Web }}",
+              "type": "string"
+            },
+            {
+              "id": "html-content-field",
+              "name": "htmlContent",
+              "value": "={{ typeof $json === 'string' ? $json : JSON.stringify($json) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1360,
+        320
+      ],
+      "id": "aa1dd799-6f5c-402f-b458-495ff9a647e1",
+      "name": "Mapeo correo - web1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2176,
+        304
+      ],
+      "id": "34eb28ee-6a83-4eeb-a5f9-4d67fd4b7c14",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener HTML de múltiples posibles ubicaciones\nconst input = $input.first().json;\nlet html = '';\n\n// Prioridad: htmlContent del mapeo, o data legacy, o el JSON directo si es string\nif (input.htmlContent && typeof input.htmlContent === 'string') {\n  html = input.htmlContent;\n} else if (input.data && typeof input.data === 'string') {\n  html = input.data;\n} else if (typeof input === 'string') {\n  html = input;\n}\n\n// Si el HTML está vacío, devolver error informativo\nif (!html || html.trim() === '' || html === '{}' || html === 'undefined') {\n  return [{\n    json: {\n      cleanText: '',\n      coloresPrincipales: [],\n      colorPrimario: '#2563eb',\n      colorSecundario: '#1e40af',\n      colorAccento: '#3b82f6',\n      error: 'No se pudo obtener el HTML de la web',\n      correo: input.correo || '',\n      web: input.web || ''\n    }\n  }];\n}\n\n// === LIMPIEZA DEL TEXTO VISIBLE ===\nconst cleanText = html\n  .replace(/<script[\\s\\S]*?>[\\s\\S]*?<\\/script>/gi, '')\n  .replace(/<style[\\s\\S]*?>[\\s\\S]*?<\\/style>/gi, '')\n  .replace(/<\\/?[^>]+(>|$)/g, ' ')\n  .replace(/\\s+/g, ' ')\n  .trim()\n  .slice(0, 4000);\n\n// === EXTRACCIÓN DE COLORES ===\nconst coloresEncontrados = new Set();\n\n// 1. Colores HEX (#fff, #ffffff)\nconst hexMatches = html.match(/#([0-9a-fA-F]{3}){1,2}\\b/g) || [];\nhexMatches.forEach(color => coloresEncontrados.add(color.toLowerCase()));\n\n// 2. Colores RGB/RGBA\nconst rgbMatches = html.match(/rgba?\\s*\\(\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*,\\s*\\d{1,3}(?:\\s*,\\s*[\\d.]+)?\\s*\\)/gi) || [];\nrgbMatches.forEach(rgb => {\n  const match = rgb.match(/(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})/);\n  if (match) {\n    const hex = '#' + [match[1], match[2], match[3]]\n      .map(x => parseInt(x).toString(16).padStart(2, '0'))\n      .join('');\n    coloresEncontrados.add(hex.toLowerCase());\n  }\n});\n\n// 3. Colores de CSS inline (style=\"...color:...\")\nconst styleMatches = html.match(/(?:background-color|color|border-color)\\s*:\\s*([^;\"']+)/gi) || [];\nstyleMatches.forEach(styleMatch => {\n  const colorValue = styleMatch.split(':')[1]?.trim() || '';\n  if (colorValue.startsWith('#')) {\n    coloresEncontrados.add(colorValue.toLowerCase());\n  } else if (colorValue.startsWith('rgb')) {\n    const rgbMatch = colorValue.match(/(\\d{1,3})\\s*,\\s*(\\d{1,3})\\s*,\\s*(\\d{1,3})/);\n    if (rgbMatch) {\n      const hex = '#' + [rgbMatch[1], rgbMatch[2], rgbMatch[3]]\n        .map(x => parseInt(x).toString(16).padStart(2, '0'))\n        .join('');\n      coloresEncontrados.add(hex.toLowerCase());\n    }\n  }\n});\n\n// Filtrar colores muy claros (blancos) y muy oscuros (negros)\nconst coloresUtiles = Array.from(coloresEncontrados).filter(color => {\n  if (!color.startsWith('#') || color.length < 4) return false;\n  let hex = color.slice(1);\n  if (hex.length === 3) {\n    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];\n  }\n  const r = parseInt(hex.slice(0, 2), 16);\n  const g = parseInt(hex.slice(2, 4), 16);\n  const b = parseInt(hex.slice(4, 6), 16);\n  const brightness = (r * 299 + g * 587 + b * 114) / 1000;\n  return brightness > 30 && brightness < 240;\n});\n\n// Seleccionar colores principales (máximo 5)\nconst coloresPrincipales = coloresUtiles.slice(0, 5);\n\n// Asignar roles a los colores\nconst colorPrimario = coloresPrincipales[0] || '#2563eb';\nconst colorSecundario = coloresPrincipales[1] || '#1e40af';\nconst colorAccento = coloresPrincipales[2] || '#3b82f6';\n\nreturn [{\n  json: {\n    cleanText: cleanText,\n    coloresPrincipales: coloresPrincipales,\n    colorPrimario: colorPrimario,\n    colorSecundario: colorSecundario,\n    colorAccento: colorAccento,\n    correo: input.correo || '',\n    web: input.web || ''\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1136,
+        320
+      ],
+      "id": "007637ab-bbcc-4046-8415-3e48b99664d2",
+      "name": "Limpiar codigo + colores1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama_ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n        \"model\": \"qwen2.5:latest\",\n        \"stream\": false,\n        \"format\": \"json\",\n        \"messages\": [\n          { \"role\": \"system\", \"content\": \"=Eres un experto en copywriting B2B especializado en venta de servicios de **Inteligencia Artificial y Automatización de procesos**.\\n\\n## QUÉ VENDEMOS\\nSomos **Divisual Project**, una empresa que ayuda a negocios a:\\n- Automatizar tareas repetitivas (emails, seguimientos, reportes)\\n- Implementar chatbots y asistentes con IA\\n- Crear flujos de trabajo inteligentes que ahorran horas de trabajo manual\\n- Integrar sistemas para que todo funcione sin intervención humana\\n\\n## TU TAREA\\nEscribe un email de prospeción en frío que:\\n1. **Demuestre que investigaste su negocio** - Menciona algo ESPECÍFICO que viste en su web (un servicio, su sector, algo que hacen)\\n2. **Conecte con un problema real** - Identifica una tarea repetitiva o manual que probablemente tienen\\n3. **Presente la solución de forma natural** - Cómo la IA/automatización podría ayudarles\\n4. **Termine con una pregunta simple** - Que invite a responder sí o no\\n\\n## TONO\\n- Tutea siempre\\n- Directo y humano, nada corporativo\\n- Como si hablaras con un conocido profesional\\n- Sin frases de relleno (\\\"Espero que estés bien\\\", \\\"Me permito escribirte\\\")\\n- Seguro pero no arrogante\\n\\n## ESTRUCTURA (MÁX 100 palabras)\\n1. **Gancho** - Observación específica sobre SU negocio\\n2. **Problema** - Una frustración que probablemente tienen (tareas manuales, falta de tiempo, seguimientos que se pierden)\\n3. **Solución** - Cómo ayudamos a negocios similares con IA/automatización\\n4. **CTA** - Pregunta directa tipo: \\\"¿Te interesaría ver cómo funcionaría en tu caso?\\\"\\n\\n## DISEÑO DEL EMAIL (HTML)\\nUsa los colores de SU marca SOLO para:\\n- Botón CTA: fondo con su color primario\\n- Link de firma: su color primario\\n- El resto: fondo blanco, texto gris oscuro (#374151)\\n\\nEl botón debe redirigir a: mailto:juanpe@divisualproject.com?subject=Re:%20[ASUNTO]\\n\\n## FIRMA\\nUn saludo,\\nJuan Pe Navarro\\nCEO de Divisual Project (con link a https://divisualproject.com/)\\n\\n## FORMATO DE SALIDA (JSON)\\n```json\\n{\\n  \\\"ASUNTO\\\": \\\"[Asunto corto y directo - max 50 caracteres]\\\",\\n  \\\"HTML\\\": \\\"[Email completo en HTML con estilos inline]\\\"\\n}\\n```\\n\\n## EJEMPLO DE EMAIL BUENO\\n\\\"Vi que en [nombre negocio] os dedicáis a [servicio específico]. Imagino que gestionáis muchas [tarea manual como citas/consultas/presupuestos] al día.\\n\\n¿Qué pasaría si un asistente con IA pudiera encargarse del 80% de esas gestiones mientras tú te centras en lo importante?\\n\\nHe ayudado a negocios de [sector similar] a recuperar más de 15 horas semanales automatizando exactamente eso.\\n\\n¿Te interesa ver cómo funcionaría en tu caso?\\\"\\n\\n## PROHIBIDO\\n- Hablar de colores o diseño web\\n- Emails genéricos que sirvan para cualquiera\\n- Más de 120 palabras\\n- Vender agresivamente\\n- Mentir o exagerar\\n\" },\n          { \"role\": \"user\", \"content\": \"=### DATOS DEL PROSPECTO\\n\\n**Información de su negocio (extraída de su web):**\\n{{ $json.cleanText }}\\n\\n**Colores de su marca (SOLO para diseño del email):**\\n- Primario: {{ $json.colorPrimario }}\\n- Secundario: {{ $json.colorSecundario }}\\n\" }\n        ]\n      }",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "f025d0a4-9164-4d47-a9ba-b01b52bba0a0",
+      "name": "Agente creador de Email IceBreaker1 (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -944,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA",
+          "mode": "list",
+          "cachedResultName": "LEAD SCRAPPING CONTROL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1U6adXtgcy7pgIQAF2sMn7GFcDbxvbzFjVD9duN_liwA/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -2736,
+        304
+      ],
+      "id": "df835e93-a919-40e3-807e-c17c9be7c6a4",
+      "name": "Google Sheets2",
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "ovIzcN1TGUNM8rdA",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener la URL desde el item actual del loop\nconst item = $input.first();\nlet url = item.json.Web || '';\n\n// Verificar que la URL existe\nif (!url || typeof url !== 'string' || url.trim() === '') {\n  return [{ json: { error: 'URL no válida', original: url } }];\n}\n\n// Limpiar espacios en blanco\nurl = url.trim();\n\n// Asegurar que tiene protocolo\nif (!url.match(/^https?:\\/\\//i)) {\n  url = 'https://' + url;\n}\n\n// Cambiar http:// a https://\nurl = url.replace(/^http:\\/\\//i, 'https://');\n\n// Eliminar www. si existe\nurl = url.replace(/^(https:\\/\\/)www\\./i, '$1');\n\n// Asegurar que termine con /\nif (!url.endsWith('/')) {\n  url += '/';\n}\n\n// Retornar en formato correcto\nreturn [{\n  json: {\n    cleanUrl: url,\n    originalUrl: item.json.Web\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1904,
+        320
+      ],
+      "id": "ea610a76-86e7-4c07-976b-52c349c174f8",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2992,
+        224
+      ],
+      "id": "cf49d074-be94-43e0-8c47-8cac0e179b34",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "filter-estado",
+              "leftValue": "={{ $json.Estado }}",
+              "rightValue": "Sin enviar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a00387b5-e4ee-4a6e-bccd-5a94bb4103bc",
+      "name": "Filter Pendientes",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -2464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a0c892e7-3f34-428c-afee-60df996b500c",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "schema",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "ee97ab7a-9921-4c3b-95dd-2ede83a31a25",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "google",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "6326ca6f-8dc1-4ef4-8325-31100e23f0db",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "gstatic",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "6659d028-9d54-4fac-8f53-930c3c832680",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "whatsapp",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "7edbb875-1e2b-470a-8092-8c70f344232f",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "wa.link",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "1aafcb3c-5a40-4483-9dfc-a5c944938457",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "facebook",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "f486bcab-39f1-4726-a0c3-2c1afd5498ec",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "wa.me",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "18bdea02-0121-4887-996a-7b4c5c5dfc45",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "instagram",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "new-twitter",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "twitter",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "new-linkedin",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "linkedin",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            },
+            {
+              "id": "new-youtube",
+              "leftValue": "={{ $json.websiteUri }}",
+              "rightValue": "youtube",
+              "operator": {
+                "type": "string",
+                "operation": "notContains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        -4480,
+        -224
+      ],
+      "id": "2219562f-e168-4a98-9b2a-c60686ac7b59",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "batchSize": 100,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -4752,
+        -240
+      ],
+      "id": "fec8d1f3-1edc-4fc8-9bf5-70f4f237e35c",
+      "name": "Loop Over Items",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3376,
+        -224
+      ],
+      "id": "9d98f5d7-6c1d-4549-ad8f-af13474fbc5f",
+      "name": "Wait",
+      "webhookId": "063e5eaa-aa5f-4636-912c-ce0b7378b1bb"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "42862ea8-a8c9-4f54-9dbd-898e9f4fe8a9",
+              "name": "maps_url",
+              "value": "=https://www.google.com/maps/search/{{ encodeURIComponent($json.niche + ' ' + $json.city) }}?hl=es&gl=es&region=es",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4000,
+        -448
+      ],
+      "id": "0e1e213b-0f14-4eb5-af28-7ec5dcd6e59a",
+      "name": "Construir URL"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama_ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n        \"model\": \"qwen2.5:latest\",\n        \"stream\": false,\n        \"format\": \"\",\n        \"messages\": [\n          { \"role\": \"system\", \"content\": \"\" },\n          { \"role\": \"user\", \"content\": \"=Genera UNA frase corta: \\\"Búscame [negocio] en [provincia española]\\\"\\n\\nNegocios: médicos, abogados, clínicas dentales, asesorías, clínicas de belleza, fisioterapeutas, masajistas, osteópatas\\n\\nProvincias: cualquiera de España (Madrid, Barcelona, Sevilla, Valencia, Málaga, Bilbao, Zaragoza, etc.)\\n\\nReglas:\\n- Solo UNA frase\\n- Varía negocio y provincia\\n- Sin explicaciones\\n\\nEjemplo: \\\"Búscame dentistas en Málaga.\\\"\\n\" }\n        ]\n      }",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "e3f12aef-bc2b-415f-9ad1-14a70fee8b7c",
+      "name": "OpenAI (Ollama)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -4848,
+        -448
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Función para quitar tildes y limpiar texto\nconst normalize = (str) =>\n  str.normalize(\"NFD\").replace(/[\\u0300-\\u036f]/g, \"\").toLowerCase().trim();\n\nconst originalText = $json.text || '';\nconst text = normalize(originalText);\n\n// Nuevos patrones: buscame, quiero, necesito, hay... [nicho] en [ciudad]\nconst regex = /\\b(?:busc(a|ame|qu?ame)|quiero|necesito|hay)\\s+(.*?)\\s+en\\s+(.+?)([.,\\s]|$)/i;\nconst match = text.match(regex);\n\nif (match && match[2] && match[3]) {\n  const niche = match[2].trim();\n  const city = match[3].trim();\n  return [\n    {\n      json: {\n        niche,\n        city,\n        original: originalText\n      }\n    }\n  ];\n} else {\n  return [\n    {\n      json: {\n        error: \"❌ No se pudo extraer el nicho y la ciudad.\",\n        original: originalText\n      }\n    }\n  ];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4240,
+        -448
+      ],
+      "id": "4793f123-a900-49f0-9231-39ce06c07eb0",
+      "name": "Diferenciar nicho de ciudad"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "42862ea8-a8c9-4f54-9dbd-898e9f4fe8a9",
+              "name": "text",
+              "value": "={{ $json.chatInput || $json.message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -4512,
+        -448
+      ],
+      "id": "9f7a1250-26f8-442d-b888-571b7c9ca0ed",
+      "name": "Mapeo de texto"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.websiteUri }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+            },
+            {
+              "name": "Referer",
+              "value": "https://www.google.com/"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 3
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3568,
+        -224
+      ],
+      "id": "05523bb0-3627-4b27-8e17-332b3a1785db",
+      "name": "Scrapeo de páginas",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 1000,
+      "alwaysOutputData": true,
+      "executeOnce": false,
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Optimize email extraction using best practices\nconst items = $input.all();\nconst emailRegex = /[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}/g;\n\nreturn items.flatMap(item => {\n  // Get HTML from possible locations (robust check)\n  const htmlText = typeof item.json === 'string' ? item.json : \n                   (item.json.data || item.json.body || JSON.stringify(item.json));\n  \n  if (!htmlText || typeof htmlText !== 'string') return [];\n\n  const extracted = htmlText.match(emailRegex) || [];\n  \n  // Unique emails per page, lowercased\n  const uniqueEmails = [...new Set(extracted.map(e => e.toLowerCase()))];\n\n  // Filter junk\n  const validEmails = uniqueEmails.filter(email => {\n    return !email.endsWith('.png') && \n           !email.endsWith('.jpg') && \n           !email.endsWith('.jpeg') && \n           !email.endsWith('.webp') && \n           !email.endsWith('.gif') &&\n           !email.startsWith('rating@') &&\n           !email.startsWith('sentry@') &&\n           !email.startsWith('noreply@') &&\n           !email.includes('example.com') &&\n           email.length < 100;\n  });\n\n  return validEmails.map(email => ({\n    json: {\n      Email: email,\n      Web: item.json.cleanUrl || item.json.url || item.json.websiteUri || 'URL desconocida',\n      SourceTitle: item.json.title || ''\n    }\n  }));\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3168,
+        -224
+      ],
+      "id": "fbd9e62f-3530-44c9-bffb-8330686fb1f9",
+      "name": "Extraer emails",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -2752,
+        -240
+      ],
+      "id": "b4107f7b-36b6-4683-8ed2-28837dacbc3b",
+      "name": "Borrar duplicados1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://places.googleapis.com/v1/places:searchText",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Goog-Api-Key",
+              "value": "AIzaSyBB2AF9QVyy8fjIHma9414Jg6VG6RXXK0o"
+            },
+            {
+              "name": "X-Goog-FieldMask",
+              "value": "places.websiteUri"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"textQuery\": \"{{ $('Diferenciar nicho de ciudad').item.json.niche }} en {{ $('Diferenciar nicho de ciudad').item.json.city }}\"\n} ",
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 2
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -3712,
+        -448
+      ],
+      "id": "37b26bf8-85e5-48b0-8715-2802dc394763",
+      "name": "Scrapeo Google Maps1",
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "places",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -5136,
+        -240
+      ],
+      "id": "175c4c12-92f4-4867-a097-fd0dd58e3aa4",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3776,
+        -224
+      ],
+      "id": "134fd978-fa39-4f6c-b9fd-b9a3f4097cfe",
+      "name": "Wait1",
+      "webhookId": "bb348ef4-dc0a-4377-9661-a64ca995804c"
+    },
+    {
+      "parameters": {
+        "compare": "selectedFields",
+        "fieldsToCompare": "websiteUri",
+        "options": {}
+      },
+      "id": "7f400008-2e65-4814-87b4-36b3c9e326af",
+      "name": "Deduplicar URLs",
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -4016,
+        -224
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1Gdf8E07_Z0wfwPKDOvDp-lmF2jQ6QAhMkQXUTmRd6xM",
+          "mode": "list",
+          "cachedResultName": "Copia de LEAD SCRAPPING CONTROL",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Gdf8E07_Z0wfwPKDOvDp-lmF2jQ6QAhMkQXUTmRd6xM/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Gdf8E07_Z0wfwPKDOvDp-lmF2jQ6QAhMkQXUTmRd6xM/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Web": "={{ $json.Web }}",
+            "Correo": "={{ $json.Email }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Web",
+              "displayName": "Web",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Correo",
+              "displayName": "Correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefono",
+              "displayName": "Telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Correo Icebreaker",
+              "displayName": "Correo Icebreaker",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2496,
+        -240
+      ],
+      "id": "d96ce38d-8a42-4289-a3f6-b4fd76a37bad",
+      "name": "Google Sheets",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 4,
+      "waitBetweenTries": 3000,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "0sD57lYbrFiZOxWn",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Limpia URLs removiendo www. y normalizando\nconst items = $input.all();\n\nreturn items.map(item => {\n  const original = item.json.websiteUri || '';\n  const cleaned = original.replace(/^https?:\\/\\/(www\\.)?/i, 'https://');\n  return {\n    json: {\n      ...item.json,\n      websiteUri: cleaned\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -4288,
+        -224
+      ],
+      "id": "3d96d1d7-9666-489b-8aa5-65968074e826",
+      "name": "Limpiamos web"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -5152,
+        -448
+      ],
+      "id": "f0f552ab-f1f8-4aaa-bced-66b1dbd5a4d0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9190a1cd-6dcf-40ec-a1fc-bc9419a1e724",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "URL desconocida",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -2960,
+        -224
+      ],
+      "id": "81692018-e9ba-4837-b022-d766a594d3c7",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Scrape Company URLs1": {
+      "main": [
+        [
+          {
+            "node": "Mapeo correo - web1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapeo correo - web1": {
+      "main": [
+        [
+          {
+            "node": "Limpiar codigo + colores1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiar codigo + colores1": {
+      "main": [
+        [
+          {
+            "node": "Agente creador de Email IceBreaker1 (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente creador de Email IceBreaker1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Scrape Company URLs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets2": {
+      "main": [
+        [
+          {
+            "node": "Filter Pendientes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Pendientes": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Limpiamos web",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Extraer emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir URL": {
+      "main": [
+        [
+          {
+            "node": "Scrapeo Google Maps1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Mapeo de texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diferenciar nicho de ciudad": {
+      "main": [
+        [
+          {
+            "node": "Construir URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mapeo de texto": {
+      "main": [
+        [
+          {
+            "node": "Diferenciar nicho de ciudad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrapeo de páginas": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraer emails": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Borrar duplicados1": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrapeo Google Maps1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Scrapeo de páginas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicar URLs": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpiamos web": {
+      "main": [
+        [
+          {
+            "node": "Deduplicar URLs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Mapeo de texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente creador de Email IceBreaker1 (Ollama)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenAI (Ollama)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Borrar duplicados1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "b3f2c50a-1ead-4db1-a0b1-f5dbf69d5771",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a7f8cb06dc18876fb65fc4df682dd993d87786e54ace4b7b742abe07e8d70cf7"
+  },
+  "id": "E3Ahg3U6WobMFXU8",
+  "tags": []
+}
